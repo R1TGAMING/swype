@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Swype - Temukan jurusan dari kebiasaanmu</title>
+    <meta name="description" content="Swype mencocokkan kebiasaan sehari-harimu dengan 19 jurusan kuliah lewat swipe 2 menit. Dapat 3 jurusan terdekat, alasan kecocokannya, dan gambaran kuliahnya.">
+    <meta name="theme-color" content="#F3F0FF">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -31,7 +33,23 @@
             background-image: radial-gradient(#D9D1FF 1.5px, transparent 1.5px);
             background-size: 22px 22px;
         }
-        @media (prefers-reduced-motion: reduce) { * { transition-duration: .01ms !important; } }
+        /* Permukaan bawaan browser disetel dari palet (bukan default sistem) */
+        ::selection { background: #FFD23F; color: #1B1340; }
+        html {
+            scrollbar-color: #C9BEFF #F3F0FF;
+            /* Jaring pengaman: selama kartu masih terbang/di-drag (beberapa ratus ms), viewport
+               tetap tak bisa digeser ke kiri/kanan. Penyebab utamanya ditangani di logic.js. */
+            overflow-x: hidden; /* fallback: `clip` baru didukung di Safari 16+ */
+            overflow-x: clip;
+        }
+        @media (prefers-reduced-motion: reduce) { * { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+        /* ===== Layar analisis ===== */
+        #loading-screen .spinner {
+            width: 64px; height: 64px; border-radius: 9999px;
+            border: 8px solid #1B1340; border-top-color: #5B3DF5;
+            animation: spin .8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
         /* ===== Lembar profil cetak untuk guru BK ===== */
         #print-profile { display: none; color: #1B1340; }
         #print-profile h1 { font-size: 22px; font-weight: 800; }
@@ -39,7 +57,7 @@
         #print-profile ol, #print-profile ul { margin: 0; padding-left: 20px; }
         #print-profile li { margin-bottom: 6px; font-size: 14px; }
         #print-meta { font-size: 12px; color: #555; }
-        #print-profile .print-note { margin-top: 22px; padding-top: 8px; font-size: 11px; color: #555; border-top: 1px solid #bbb; }
+        #print-profile .print-note { margin-top: 22px; padding-top: 8px; font-size: 12px; color: #555; border-top: 1px solid #bbb; }
         #share-qr svg { width: 100%; height: auto; }
         @media print {
             body { background: #fff !important; }
@@ -51,8 +69,10 @@
 </head>
 <body class="min-h-screen font-body text-ink antialiased py-8 px-4">
 
+    <main>
+
     <!-- ============ 1. INTRO ============ -->
-    <main id="intro-screen" class="screen mx-auto flex min-h-[80vh] max-w-md flex-col justify-center text-center">
+    <section id="intro-screen" class="screen mx-auto flex min-h-[80vh] max-w-md flex-col justify-center text-center">
         <div class="relative mx-auto mb-10 h-44 w-56">
             <div class="absolute left-0 top-4 flex h-36 w-28 -rotate-12 items-end rounded-3xl border-2 border-ink bg-[#FFD3DC] p-3 shadow-[5px_5px_0_#1B1340]">
                 <span class="font-display text-lg font-extrabold text-coralInk">Skip</span>
@@ -71,7 +91,7 @@
         <div class="mx-auto mt-6 max-w-xs text-left">
             <label for="nama" class="text-sm font-semibold text-ink/85">Namamu? <span class="font-normal text-ink/70">(opsional)</span></label>
             <input id="nama" type="text" maxlength="40" autocomplete="name" placeholder="Nama kamu"
-                class="mt-2 w-full rounded-2xl border-2 border-ink bg-white px-4 py-2 text-base shadow-[3px_3px_0_#1B1340] focus-visible:outline focus-visible:outline-4 focus-visible:outline-violet" />
+                class="mt-2 w-full rounded-2xl border-2 border-ink bg-white px-4 py-2 text-base placeholder:text-ink/70 shadow-[3px_3px_0_#1B1340] focus-visible:outline focus-visible:outline-4 focus-visible:outline-violet" />
         </div>
         <div class="mx-auto mt-6 max-w-xs">
             <p class="text-sm font-semibold text-ink/85">Kamu dari jalur apa? <span class="font-normal text-ink/70">(opsional)</span></p>
@@ -91,14 +111,14 @@
             class="mx-auto mt-8 rounded-full border-2 border-ink bg-sun px-10 py-4 font-display text-xl font-bold shadow-[5px_5px_0_#1B1340] transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none focus-visible:outline focus-visible:outline-4 focus-visible:outline-violet">
             Mulai geser
         </button>
-    </main>
+    </section>
 
     <!-- ============ 2. KUIS ============ -->
     <section id="quiz-screen" class="screen hidden mx-auto max-w-sm">
         <div class="mb-6">
             <div class="mb-2 flex items-baseline justify-between">
                 <span class="font-display text-2xl font-extrabold text-violet">Swype</span>
-                <span id="progress-text" aria-live="polite" class="text-sm font-semibold text-ink/70">Kartu 1 dari 30</span>
+                <span id="progress-text" class="text-sm font-semibold text-ink/70">Kartu 1 dari 30</span>
             </div>
             <div class="h-3 overflow-hidden rounded-full border-2 border-ink bg-white">
                 <div id="progress-bar" class="h-full w-0 bg-violet transition-all duration-300"></div>
@@ -106,6 +126,7 @@
         </div>
 
         <div id="card-stack" role="group" aria-label="Kartu kebiasaan. Geser kanan untuk Suka, geser kiri untuk Lewat." class="relative mb-10 h-[420px] w-full"></div>
+        <p id="card-announce" class="sr-only" aria-live="polite"></p>
 
         <div class="flex items-center justify-center gap-10">
             <button onclick="swipeLeft()" aria-label="Lewat, bukan aku"
@@ -116,6 +137,13 @@
         <button id="undo-btn" onclick="undo()" aria-label="Batalkan swipe terakhir" disabled
             class="mx-auto mt-6 flex h-12 w-12 items-center justify-center rounded-full border-2 border-ink bg-white text-2xl shadow-[4px_4px_0_#1B1340] transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none focus-visible:outline focus-visible:outline-4 focus-visible:outline-violet disabled:opacity-40 disabled:pointer-events-none">↩</button>
         <p class="mt-4 text-center text-xs text-ink/75">Tekan Z untuk membatalkan geseran terakhir.</p>
+    </section>
+
+    <!-- ============ ANALISIS ============ -->
+    <section id="loading-screen" class="screen hidden mx-auto flex min-h-[80vh] max-w-sm flex-col items-center justify-center text-center">
+        <div class="spinner" aria-hidden="true"></div>
+        <p class="mt-8 font-display text-2xl font-bold">Menganalisis kebiasaanmu…</p>
+        <p class="mt-2 text-sm text-ink/70">Mencocokkan dengan 19 jurusan</p>
     </section>
 
     <!-- ============ 3. HASIL ============ -->
@@ -143,13 +171,19 @@
                     </a>
                 </div>
 
-                <div class="rounded-[2rem] border-2 border-ink bg-[#E4D9FF] p-7 md:p-9">
+                <div class="rounded-[2rem] border-2 border-ink bg-[#E4D9FF] p-7 shadow-[6px_6px_0_#1B1340] md:p-9">
                     <h3 class="font-display text-2xl font-bold">Kenapa cocok untukmu</h3>
                     <p class="mt-1 text-sm text-ink/70">Kebiasaan yang kamu sukai dan berkaitan dengan jurusan ini:</p>
                     <ul id="major-reasons" class="mt-4 space-y-3 text-base"></ul>
                 </div>
 
-                <div class="rounded-[2rem] border-2 border-ink bg-[#CFE3FF] p-7 md:p-9">
+                <div class="rounded-[2rem] border-2 border-ink bg-[#D5F5E3] p-7 shadow-[6px_6px_0_#1B1340] md:p-9">
+                    <h3 class="font-display text-2xl font-bold">Survival kit jurusan ini</h3>
+                    <p class="mt-1 text-sm text-ink/70">Tips (agak) nyata biar kuat menjalaninya.</p>
+                    <ul id="major-tips" class="mt-4 space-y-3 text-base"></ul>
+                </div>
+
+                <div class="rounded-[2rem] border-2 border-ink bg-[#CFE3FF] p-7 shadow-[6px_6px_0_#1B1340] md:p-9">
                     <h3 class="font-display text-2xl font-bold">Jalur masuk & biaya</h3>
                     <p class="mt-1 text-sm text-ink/70">Info umum, tiap kampus dan tiap tahun bisa berbeda.</p>
                     <p id="jalur-note" class="mt-3 hidden rounded-xl border-2 border-coralInk bg-white p-3 text-sm font-semibold text-coralInk"></p>
@@ -170,11 +204,18 @@
                 </div>
             </div>
 
-            <!-- Kanan: gambaran kuliah -->
-            <div class="rounded-[2rem] border-2 border-ink bg-[#FFE8A3] p-7 shadow-[6px_6px_0_#1B1340] md:p-9 lg:col-span-2">
-                <h3 class="font-display text-2xl font-bold">Gambaran kuliahnya</h3>
-                <p class="mb-6 mt-1 text-sm text-ink/70">Garis besar, tiap kampus bisa berbeda.</p>
-                <ol id="major-roadmap" class="ml-2 border-l-2 border-ink"></ol>
+            <!-- Kanan: gambaran kuliah + profil minat -->
+            <div class="space-y-6 lg:col-span-2">
+                <div class="rounded-[2rem] border-2 border-ink bg-[#FFE8A3] p-7 shadow-[6px_6px_0_#1B1340] md:p-9">
+                    <h3 class="font-display text-2xl font-bold">Gambaran kuliahnya</h3>
+                    <p class="mb-6 mt-1 text-sm text-ink/70">Garis besar, tiap kampus bisa berbeda.</p>
+                    <ol id="major-roadmap" class="ml-2 border-l-2 border-ink"></ol>
+                </div>
+                <div class="rounded-[2rem] border-2 border-ink bg-white p-7 shadow-[6px_6px_0_#1B1340] md:p-9">
+                    <h3 class="font-display text-2xl font-bold">Profil minatmu</h3>
+                    <p class="mt-1 text-sm text-ink/70">Terbentuk dari kebiasaan yang kamu pilih.</p>
+                    <canvas id="trait-chart" class="mt-3" height="240" aria-label="Grafik radar profil minat"></canvas>
+                </div>
             </div>
         </div>
 
@@ -212,6 +253,7 @@
             </button>
         </div>
     </section>
+    </main>
 
     <!-- ============ 5. LEMBAR CETAK ============ -->
     <section id="print-profile">
@@ -231,7 +273,7 @@
             <div class="flex items-center justify-between gap-4">
                 <h2 id="share-title" class="font-display text-2xl font-bold">Bagikan hasilmu</h2>
                 <button onclick="closeShare()" aria-label="Tutup"
-                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-white text-xl shadow-[3px_3px_0_#1B1340]">✕</button>
+                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-white text-xl shadow-[3px_3px_0_#1B1340]">✕</button>
             </div>
 
             <h3 class="mt-5 font-display text-lg font-bold">Kartu Story</h3>
@@ -247,12 +289,13 @@
                 <input id="share-link" readonly aria-label="Tautan hasil"
                     class="min-w-0 flex-1 rounded-xl border-2 border-ink bg-paper px-3 py-2 text-xs" />
                 <button onclick="copyShareLink()"
-                    class="shrink-0 rounded-xl border-2 border-ink bg-white px-3 py-2 text-sm font-bold shadow-[3px_3px_0_#1B1340]">Salin</button>
+                    class="shrink-0 rounded-xl border-2 border-ink bg-white px-4 py-2 text-sm font-bold min-h-[44px] shadow-[3px_3px_0_#1B1340]">Salin</button>
             </div>
             <div id="share-qr" class="mx-auto mt-4 w-44 max-w-full"></div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
     <script src="questions.js"></script>

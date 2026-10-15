@@ -14,10 +14,21 @@ let dragging = false, startX = 0, dx = 0;
 let lastSwipe = null;   // kartu terakhir yang di-swipe (untuk undo)
 let jalur = "";         // jalur akademik: IPA / IPS / Bahasa (opsional)
 let friendLiked = null; // id kartu dari hasil teman (tautan #hasil=...)
+const TRAIT_LABELS = ["Logika", "Kreativitas", "Sosial", "Alam", "Bisnis"];
+let traitScores = {};   // akumulasi 5 dimensi minat dari kartu yang disukai
 
 // ================== BANTUAN ==================
 function $(id) { return document.getElementById(id); }
 const sumPts = c => Object.values(c.points).reduce((a, b) => a + b, 0);
+
+// Efek suara swipe dari file mp3 (geser kiri: cancel, geser kanan: confirm).
+const sfx = { like: new Audio("swipe-confirm.mp3"), nope: new Audio("swipe-cancel.mp3") };
+sfx.like.volume = sfx.nope.volume = 0.7;
+function playSwipe(isRight) {
+    const a = isRight ? sfx.like : sfx.nope;
+    try { a.currentTime = 0; const p = a.play(); if (p && p.catch) p.catch(() => {}); }
+    catch (e) { /* audio opsional: abaikan bila browser menolak */ }
+}
 
 function show(screenId) {
     const cur = document.querySelector(".screen:not(.hidden)");
@@ -49,6 +60,7 @@ function shuffle(arr) { // Fisher-Yates
 // ================== PERSIAPAN GAME ==================
 function initGame() {
     for (const m in majorData) scores[m] = 0;
+    TRAIT_LABELS.forEach(t => traitScores[t] = 0);
 
     // Hitung skor maksimal tiap jurusan dari semua kartu
     cards.forEach(c => {
@@ -71,10 +83,10 @@ function buildStack() {
         el.className = "absolute inset-0 rounded-[2rem] border-2 border-ink p-7 flex flex-col justify-between select-none touch-none cursor-grab shadow-[6px_6px_0_#1B1340]";
         el.style.background = TINTS[i % TINTS.length];
         el.innerHTML = `
-            <div class="text-7xl leading-none pointer-events-none">${c.emoji}</div>
+            <div class="text-7xl leading-none pointer-events-none" aria-hidden="true">${c.emoji}</div>
             <p class="font-display text-3xl font-bold leading-tight pointer-events-none">${c.text}</p>
-            <span class="stamp-like pointer-events-none absolute top-6 left-5 -rotate-12 rounded-xl border-4 border-mintInk bg-white px-3 py-1 font-display text-2xl font-extrabold text-mintInk opacity-0">Suka</span>
-            <span class="stamp-nope pointer-events-none absolute top-6 right-5 rotate-12 rounded-xl border-4 border-coralInk bg-white px-3 py-1 font-display text-2xl font-extrabold text-coralInk opacity-0">Lewat</span>`;
+            <span class="stamp-like pointer-events-none absolute top-6 left-5 -rotate-12 rounded-xl border-4 border-mintInk bg-white px-3 py-1 font-display text-2xl font-extrabold text-mintInk opacity-0" aria-hidden="true">Suka</span>
+            <span class="stamp-nope pointer-events-none absolute top-6 right-5 rotate-12 rounded-xl border-4 border-coralInk bg-white px-3 py-1 font-display text-2xl font-extrabold text-coralInk opacity-0" aria-hidden="true">Lewat</span>`;
         stack.appendChild(el);
         return el;
     });
@@ -85,6 +97,8 @@ function buildStack() {
 function layoutStack() {
     els.forEach((el, i) => {
         const d = i - idx;
+        // hanya kartu teratas yang dibacakan ke pembaca layar
+        el.setAttribute("aria-hidden", d === 0 ? "false" : "true");
         if (d < 0) return; // kartu yang sudah dilempar jangan diganggu
         el.style.zIndex = 100 - d;
         if (d > 2) { el.style.opacity = 0; return; }
@@ -98,6 +112,9 @@ function updateProgress() {
     const now = Math.min(idx + 1, deck.length);
     $("progress-text").innerText = `Kartu ${now} dari ${deck.length}`;
     $("progress-bar").style.width = (now / deck.length * 100) + "%";
+    // satu pengumuman per geseran untuk pembaca layar (teks kartu tidak terbaca karena opacity)
+    const cur = deck[idx];
+    if (cur) $("card-announce").innerText = `Kartu ${now} dari ${deck.length}: ${cur.text}`;
 }
 
 // ================== INTERAKSI (mouse + sentuh via Pointer Events) ==================
@@ -171,8 +188,12 @@ function swipe(isRight) {
     if (isRight) {
         liked.push(card);
         for (const m in card.points) if (m in scores) scores[m] += card.points[m];
+        for (const t in card.traits) if (t in traitScores) traitScores[t] += card.traits[t];
     }
     lastSwipe = { card, el, wasRight: isRight };
+
+    if (navigator.vibrate) navigator.vibrate(50); // haptic di ponsel
+    playSwipe(isRight);                            // sfx: cancel (kiri) / confirm (kanan)
 
     el.querySelector(isRight ? ".stamp-like" : ".stamp-nope").style.opacity = 1;
     el.style.transition = "transform .35s ease, opacity .35s ease";
@@ -186,9 +207,13 @@ function swipe(isRight) {
 
     setTimeout(() => {
         el.style.pointerEvents = "none"; // jangan di-remove: dibutuhkan undo
+        // Kartu sudah tak terlihat (opacity 0); kembalikan posisinya supaya tidak melebarkan
+        // area gulir dokumen — pemicu halaman yang bisa digeser ke kiri/kanan di hp.
+        el.style.transition = "none";
+        el.style.transform = "none";
         busy = false;
         updateUndo();
-        if (idx >= deck.length) showResult();
+        if (idx >= deck.length) finish();
     }, 350);
 }
 
@@ -201,6 +226,7 @@ function undo() {
     if (wasRight) {
         liked.splice(liked.indexOf(card), 1);
         for (const m in card.points) if (m in scores) scores[m] -= card.points[m];
+        for (const t in card.traits) if (t in traitScores) traitScores[t] -= card.traits[t];
     }
 
     idx--;
@@ -217,6 +243,12 @@ function undo() {
 
 function updateUndo() {
     $("undo-btn").disabled = busy || !lastSwipe || idx === 0;
+}
+
+// ================== ANALISIS (jeda dramatis) ==================
+function finish() {
+    show("loading-screen");
+    setTimeout(showResult, 1900); // biar animasi "menganalisis" sempat terlihat
 }
 
 // ================== HASIL ==================
@@ -251,6 +283,7 @@ function showResult() {
     renderMajor(top3[0].major);
     renderPrintProfile();
     renderCompare();
+    setTimeout(renderTraits, 300); // setelah layar tampil, kalau tidak ukuran kanvas 0
     // pindahkan fokus ke judul hasil supaya pembaca layar tahu kuis selesai
     setTimeout(() => $("major-result").focus({ preventScroll: true }), 200);
 }
@@ -298,6 +331,10 @@ function renderMajor(major) {
     $("major-reasons").innerHTML = reasons.length
         ? reasons.map(c => `<li class="flex gap-3"><span class="text-2xl leading-none">${c.emoji}</span><span>${c.text}</span></li>`).join("")
         : `<li class="text-ink/75">Jurusan ini muncul dari kebiasaan lain yang kamu pilih.</li>`;
+
+    // Survival kit: tips (agak) nyata untuk jurusan ini
+    $("major-tips").innerHTML = (survivalTips[major] || []).map(t =>
+        `<li class="flex gap-3"><span class="text-xl leading-none" aria-hidden="true">💡</span><span>${t}</span></li>`).join("");
 
     $("major-roadmap").innerHTML = details.roadmap.map(step => `
         <li class="relative pl-6 pb-6 last:pb-0">
@@ -376,6 +413,39 @@ function renderCompare() {
         ? "Kalian sama-sama tertarik pada: " + shared.join(", ") + "."
         : "Kebiasaan kalian lumayan berbeda — justru bagus untuk saling cerita.";
     panel.classList.remove("hidden");
+}
+
+// ================== RADAR PROFIL MINAT (Chart.js) ==================
+let traitChart = null;
+function renderTraits() {
+    const canvas = $("trait-chart");
+    if (!canvas || typeof Chart !== "function") return; // CDN gagal dimuat -> lewati
+    const vals = TRAIT_LABELS.map(t => traitScores[t] || 0);
+    const max = Math.max(...vals, 1);
+    const data = vals.map(v => Math.round(v / max * 100)); // dimensi terkuat = 100
+    if (traitChart) traitChart.destroy();
+    traitChart = new Chart(canvas, {
+        type: "radar",
+        data: {
+            labels: TRAIT_LABELS,
+            datasets: [{
+                data,
+                borderColor: "#5B3DF5", backgroundColor: "rgba(91,61,245,.22)",
+                borderWidth: 3, pointBackgroundColor: "#1B1340", pointRadius: 4
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: {
+                r: {
+                    min: 0, max: 100, ticks: { display: false },
+                    grid: { color: "#D9D1FF" }, angleLines: { color: "#D9D1FF" },
+                    pointLabels: { color: "#1B1340",
+                        font: { family: "'Plus Jakarta Sans', system-ui, sans-serif", size: 14, weight: "600" } }
+                }
+            }
+        }
+    });
 }
 
 // ================== BAGIKAN HASIL (kartu PNG + tautan + QR) ==================

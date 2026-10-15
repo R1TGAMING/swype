@@ -155,47 +155,77 @@ const K = {
     AR: "Arsitektur", LI: "Teknik Lingkungan", EL: "Teknik Elektro", SR: "Seni Rupa"
 };
 
+// TRAIT: 5 dimensi minat untuk radar chart. Kode singkat biar kartu tetap ringkas.
+const TR = { L: "Logika", K: "Kreativitas", S: "Sosial", A: "Alam", B: "Bisnis" };
+
+// SURVIVAL KIT: 3 tips (agak) nyata per jurusan, tampil di halaman hasil.
+const survivalTips = {
+    "Teknik Informatika": ["Biasakan ngopi, atau minimal tahu cara bikin indomie.", "StackOverflow dan dokumentasi itu teman, bukan contekan.", "Baca pesan error sampai habis, jangan langsung rerun."],
+    "Hukum": ["Hafal pasal penting, tapi tidur cukup lebih penting.", "Latihan ngomong di depan cermin sebelum moot court.", "Belajar baca cepat: bacaanmu setebal bantal."],
+    "Psikologi": ["Jangan mendiagnosis temanmu sendiri. Serius.", "Belajar mendengar tanpa buru-buru menasihati.", "Kalau masuk untuk 'menyembuhkan diri', terapi beneran tetap perlu."],
+    "Kedokteran": ["Jaga makan dan tidur, bukan cuma jaga IPK.", "Kuliah 7 tahun itu maraton, bukan sprint.", "Hafal anatomi lebih cepat pakai gambar dan warna."],
+    "Ilmu Komunikasi": ["Latihan ngomong depan kamera, bukan cuma depan chat.", "Baca berita, bukan cuma caption.", "Jaringan penting, tapi tidur juga."],
+    "Desain Komunikasi Visual (DKV)": ["Kritik itu santapan, bukan serangan pribadi.", "Simpan file dengan nama yang jelas. Kamu akan menyesal kalau tidak.", "Portofolio lebih berbicara daripada nilai."],
+    "Akuntansi": ["Teliti itu bisa dilatih, bukan bakat.", "Excel lebih berguna dari yang kamu duga.", "Debit kiri, kredit kanan, lalu semuanya masuk akal."],
+    "Teknik Sipil": ["Siap kotor dan ke lapangan, bukan cuma menggambar di laptop.", "Fisika dan kalkulus jangan dimusuhi.", "Keselamatan nomor satu, bahkan di tugas kuliah."],
+    "Farmasi": ["Kimia organik akan menguji kesabaranmu. Bernapaslah.", "Teliti soal dosis, santai soal teman.", "Belajar nama obat generik, bukan cuma merek."],
+    "Pendidikan Guru": ["Kelas selalu lebih hidup dari modul; siapkan energi cadangan.", "Sabar itu bagian dari kurikulum.", "Suara lantang dan telinga yang mendengar sama pentingnya."],
+    "Hubungan Internasional": ["Bahasa asing itu pintu, bukan sekadar nilai ujian.", "Ikuti berita dunia walau sedang malas.", "Lapang dada pada perbedaan adalah skill utama."],
+    "Teknik Mesin": ["Kotor dan berminyak itu tanda kamu benar-benar praktik.", "Jangan takut bongkar pasang.", "Gambar teknik harus rapi: garisnya, bukan cuma niatnya."],
+    "Administrasi Bisnis": ["Kerja tim wajib; belajar bagi tugas dari sekarang.", "Presentasi lebih meyakinkan kalau pakai data, bukan tebakan.", "Mimpi bisnis boleh besar, modal awal boleh kecil."],
+    "Biologi": ["Cuci tangan sebelum ke lab itu pasangan sempurna.", "Catat pengamatan langsung, jangan andalkan ingatan.", "Kesabaran menunggu kultur juga bagian belajar."],
+    "Teknik Kimia": ["Gunakan pelindung mata. Aman dan tetap keren.", "Pahami alur neraca massa, jangan hafal angkanya.", "Keselamatan, kesabaran, ketelitian: urutannya penting."],
+    "Arsitektur": ["Begadang itu ritme studio. Siapkan pakaian bersih.", "Desain bagus butuh alasan, bukan cuma estetika.", "Simpan file sebelum membangun apa pun."],
+    "Teknik Lingkungan": ["Percaya data pengukuran, walau sering bikin kesal.", "Peduli sampah sejak kuliah, bukan cuma di slogan.", "Lapangan kadang lebih berdebu dari ruang kelas."],
+    "Teknik Elektro": ["Hati-hati listrik sungguhan, bukan cuma simulasi.", "Solder itu teman; rapikan jalurnya.", "Salah rangkaian itu biasa, baca ulang skematiknya."],
+    "Seni Rupa": ["Karya tidak harus sempurna untuk berharga.", "Simpan sketsa jelek: itu bukti kamu berkembang.", "Kritik bikin tumbuh; jangan berlebihan pada diri sendiri."]
+};
+
 // KARTU: tiap aktivitas memberi poin ke 1-3 jurusan (angka = bobot, 1 atau 2).
 // Aturan: tiap jurusan sebaiknya muncul di minimal 3 kartu.
 const cards = [
-    { e: "🔧", t: "Membongkar gadget atau barang elektronik rusak", p: { TI: 1, EL: 2, ME: 1 } },
-    { e: "💻", t: "Ngulik bikin web, game, atau aplikasi sederhana", p: { TI: 2 } },
-    { e: "🧩", t: "Suka teka-teki logika dan hitung-hitungan", p: { TI: 1, AK: 1, EL: 1, SP: 1 } },
-    { e: "🗣️", t: "Berdebat dengan argumen yang logis", p: { HK: 2, HI: 1, KM: 1 } },
-    { e: "⚖️", t: "Geram lihat ketidakadilan di berita dan ingin ikut membela", p: { HK: 2, HI: 1 } },
-    { e: "📜", t: "Membaca aturan, pasal, atau perjanjian sampai detail", p: { HK: 2, AK: 1 } },
-    { e: "👂", t: "Sering jadi tempat curhat teman-teman", p: { PS: 2, PG: 1 } },
-    { e: "🧠", t: "Penasaran kenapa orang bisa punya fobia atau trauma", p: { PS: 2, KD: 1 } },
-    { e: "🩺", t: "Tertarik cara kerja tubuh manusia dan penyakit", p: { KD: 2, FR: 1, BI: 1 } },
-    { e: "🏥", t: "Rela belajar bertahun-tahun supaya bisa menolong orang sakit", p: { KD: 2, FR: 1 } },
-    { e: "🎬", t: "Bikin konten video atau jadi MC dan moderator acara", p: { KM: 2, DKV: 1 } },
-    { e: "✍️", t: "Merangkai kata, nulis caption atau artikel", p: { KM: 2, HI: 1 } },
-    { e: "✏️", t: "Menggambar, doodle, atau bikin animasi pendek", p: { DKV: 1, SR: 2 } },
-    { e: "📱", t: "Menata feed Instagram dan mendesain poster", p: { DKV: 2, SR: 1 } },
-    { e: "🖌️", t: "Melukis, memahat, atau bikin karya seni dengan tangan", p: { SR: 2, AR: 1 } },
-    { e: "🧾", t: "Mencatat uang jajan dan mengecek ke mana larinya", p: { AK: 2, AB: 1 } },
-    { e: "🛍️", t: "Jualan online dan menghitung untung ruginya", p: { AB: 2, AK: 1 } },
-    { e: "📣", t: "Jadi ketua panitia: mengatur tim dan anggaran", p: { AB: 2, HI: 1, PG: 1 } },
-    { e: "🧑‍🏫", t: "Menjelaskan pelajaran ke teman sampai mereka paham", p: { PG: 2, PS: 1 } },
-    { e: "🧒", t: "Senang mengajari atau mendampingi adik-adik", p: { PG: 2, PS: 1 } },
-    { e: "🌍", t: "Mengikuti berita negara lain, budaya, dan bahasa asing", p: { HI: 2, KM: 1 } },
-    { e: "🌿", t: "Mengamati tumbuhan, hewan, atau serangga", p: { BI: 2, LI: 1 } },
-    { e: "🔬", t: "Eksperimen di lab: mencampur, mengukur, mencatat hasil", p: { KI: 2, FR: 1, BI: 1 } },
-    { e: "🧪", t: "Penasaran bagaimana bahan jadi plastik, sabun, atau bahan bakar", p: { KI: 2, FR: 1 } },
-    { e: "💊", t: "Tertarik mengenal obat dan cara kerjanya", p: { FR: 2, KD: 1, KI: 1 } },
-    { e: "🌉", t: "Memperhatikan bangunan, jembatan, dan jalan", p: { SP: 2, AR: 1 } },
-    { e: "🏠", t: "Menggambar denah rumah impian", p: { AR: 2, SP: 1, SR: 1 } },
-    { e: "🌊", t: "Ingin tahu cara membangun yang tahan gempa dan banjir", p: { SP: 2, LI: 1 } },
-    { e: "♻️", t: "Peduli sampah, polusi, dan kualitas air", p: { LI: 2, BI: 1, KI: 1 } },
-    { e: "⚡", t: "Penasaran cara kerja listrik, robot, dan sensor", p: { EL: 2, TI: 1, ME: 1 } },
-    { e: "🏍️", t: "Mengutak-atik mesin motor atau sepeda", p: { ME: 2, EL: 1 } }
+    { e: "🔧", t: "Membongkar gadget atau barang elektronik rusak", p: { TI: 1, EL: 2, ME: 1 }, tr: { L: 2, K: 1 } },
+    { e: "💻", t: "Ngulik bikin web, game, atau aplikasi sederhana", p: { TI: 2 }, tr: { L: 2, K: 1 } },
+    { e: "🧩", t: "Suka teka-teki logika dan hitung-hitungan", p: { TI: 1, AK: 1, EL: 1, SP: 1 }, tr: { L: 2, B: 1 } },
+    { e: "🗣️", t: "Berdebat dengan argumen yang logis", p: { HK: 2, HI: 1, KM: 1 }, tr: { S: 2, L: 1 } },
+    { e: "⚖️", t: "Geram lihat ketidakadilan di berita dan ingin ikut membela", p: { HK: 2, HI: 1 }, tr: { S: 2, L: 1 } },
+    { e: "📜", t: "Membaca aturan, pasal, atau perjanjian sampai detail", p: { HK: 2, AK: 1 }, tr: { L: 2, B: 1 } },
+    { e: "👂", t: "Sering jadi tempat curhat teman-teman", p: { PS: 2, PG: 1 }, tr: { S: 2 } },
+    { e: "🧠", t: "Penasaran kenapa orang bisa punya fobia atau trauma", p: { PS: 2, KD: 1 }, tr: { L: 1, S: 1, A: 1 } },
+    { e: "🩺", t: "Tertarik cara kerja tubuh manusia dan penyakit", p: { KD: 2, FR: 1, BI: 1 }, tr: { A: 2, L: 1, S: 1 } },
+    { e: "🏥", t: "Rela belajar bertahun-tahun supaya bisa menolong orang sakit", p: { KD: 2, FR: 1 }, tr: { S: 2, A: 1, L: 1 } },
+    { e: "🎬", t: "Bikin konten video atau jadi MC dan moderator acara", p: { KM: 2, DKV: 1 }, tr: { K: 2, S: 1, B: 1 } },
+    { e: "✍️", t: "Merangkai kata, nulis caption atau artikel", p: { KM: 2, HI: 1 }, tr: { K: 2, S: 1 } },
+    { e: "✏️", t: "Menggambar, doodle, atau bikin animasi pendek", p: { DKV: 1, SR: 2 }, tr: { K: 2 } },
+    { e: "📱", t: "Menata feed Instagram dan mendesain poster", p: { DKV: 2, SR: 1 }, tr: { K: 2, S: 1, B: 1 } },
+    { e: "🖌️", t: "Melukis, memahat, atau bikin karya seni dengan tangan", p: { SR: 2, AR: 1 }, tr: { K: 2 } },
+    { e: "🧾", t: "Mencatat uang jajan dan mengecek ke mana larinya", p: { AK: 2, AB: 1 }, tr: { B: 2, L: 1 } },
+    { e: "🛍️", t: "Jualan online dan menghitung untung ruginya", p: { AB: 2, AK: 1 }, tr: { B: 2, L: 1, K: 1 } },
+    { e: "📣", t: "Jadi ketua panitia: mengatur tim dan anggaran", p: { AB: 2, HI: 1, PG: 1 }, tr: { S: 2, B: 2 } },
+    { e: "🧑‍🏫", t: "Menjelaskan pelajaran ke teman sampai mereka paham", p: { PG: 2, PS: 1 }, tr: { S: 2, L: 1 } },
+    { e: "🧒", t: "Senang mengajari atau mendampingi adik-adik", p: { PG: 2, PS: 1 }, tr: { S: 2 } },
+    { e: "🌍", t: "Mengikuti berita negara lain, budaya, dan bahasa asing", p: { HI: 2, KM: 1 }, tr: { S: 2 } },
+    { e: "🌿", t: "Mengamati tumbuhan, hewan, atau serangga", p: { BI: 2, LI: 1 }, tr: { A: 2, L: 1 } },
+    { e: "🔬", t: "Eksperimen di lab: mencampur, mengukur, mencatat hasil", p: { KI: 2, FR: 1, BI: 1 }, tr: { A: 2, L: 2 } },
+    { e: "🧪", t: "Penasaran bagaimana bahan jadi plastik, sabun, atau bahan bakar", p: { KI: 2, FR: 1 }, tr: { A: 1, L: 2, B: 1 } },
+    { e: "💊", t: "Tertarik mengenal obat dan cara kerjanya", p: { FR: 2, KD: 1, KI: 1 }, tr: { A: 1, L: 1, S: 1 } },
+    { e: "🌉", t: "Memperhatikan bangunan, jembatan, dan jalan", p: { SP: 2, AR: 1 }, tr: { L: 2, K: 1 } },
+    { e: "🏠", t: "Menggambar denah rumah impian", p: { AR: 2, SP: 1, SR: 1 }, tr: { K: 2, L: 1 } },
+    { e: "🌊", t: "Ingin tahu cara membangun yang tahan gempa dan banjir", p: { SP: 2, LI: 1 }, tr: { L: 2, K: 1, A: 1 } },
+    { e: "♻️", t: "Peduli sampah, polusi, dan kualitas air", p: { LI: 2, BI: 1, KI: 1 }, tr: { A: 2, S: 1, L: 1 } },
+    { e: "⚡", t: "Penasaran cara kerja listrik, robot, dan sensor", p: { EL: 2, TI: 1, ME: 1 }, tr: { L: 2, K: 1 } },
+    { e: "🏍️", t: "Mengutak-atik mesin motor atau sepeda", p: { ME: 2, EL: 1 }, tr: { L: 2, K: 1 } }
 ];
 
 // Ubah kode singkat (TI, HK, ...) menjadi nama jurusan lengkap
 cards.forEach((c, i) => {
-    c.id = i; c.text = c.t; c.emoji = c.e; c.points = {};
+    c.id = i; c.text = c.t; c.emoji = c.e; c.points = {}; c.traits = {};
     for (const k in c.p) {
         if (!K[k]) console.warn("Kode jurusan salah:", k);
         else c.points[K[k]] = c.p[k];
+    }
+    for (const t in c.tr) {
+        if (!TR[t]) console.warn("Kode trait salah:", t);
+        else c.traits[TR[t]] = c.tr[t];
     }
 });
