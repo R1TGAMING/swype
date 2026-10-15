@@ -135,11 +135,9 @@ addMajor("Seni Rupa", "Mengembangkan karya seni, seperti lukis, patung, grafis, 
     "Eksplorasi Media, Kuratorial, dan Pengembangan Gaya Pribadi.",
     "Menyusun portofolio, pameran tugas akhir, dan karya skripsi."]);
 
-// INFO JALUR MASUK & BIAYA (berlaku umum, bukan angka final — selalu cek sumber resmi)
-// shortcut: teks generik, belum per-kampus; upgrade kalau mau data UKT/passing grade spesifik.
-const jalurInfo = "SNBP (nilai rapor, tanpa tes), SNBT/UTBK (tes), dan jalur mandiri tiap kampus. Syarat tiap prodi dan tiap tahun berbeda, cek di snpmb.bppp.kemdikbud.go.id.";
-const biayaInfo = "PTN: UKT umumnya Rp0–Rp10 juta per semester, tergantung golongan ekonomi. Kampus swasta biasanya lebih mahal. Cek laman resmi kampus.";
-const kampusUrl = "https://pddikti.kemdikbud.go.id/";
+// INFO JALUR MASUK (berlaku umum — cek selalu sumber resmi kampus tujuan)
+// shortcut: teks generik satu untuk semua prodi; upgrade kalau mau info per-prodi (syarat nilai / passing grade).
+const jalurInfo = "Tiga pintu masuk: SNBP (dari nilai rapor), SNBT/UTBK (dari tes tulis), dan jalur mandiri kampus. Tiap prodi punya syarat beda, jadi pantau laman pendaftaran kampus tujuanmu.";
 
 // Jurusan yang umumnya lebih pas diambil dari jalur IPA/Saintek (bukan larangan, hanya catatan).
 ["Teknik Informatika", "Kedokteran", "Farmasi", "Biologi", "Teknik Kimia",

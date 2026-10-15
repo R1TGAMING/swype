@@ -312,10 +312,10 @@ function renderMajor(major) {
     $("video-link").href = details.videoLink ||
         "https://www.youtube.com/results?search_query=" + encodeURIComponent("kuliah jurusan " + major);
 
-    // Jalur masuk & biaya (info umum dari questions.js)
+    // Jalur masuk (info umum dari questions.js) + cari kampus di Google (tanpa data kampus)
     $("major-jalur").innerText = jalurInfo;
-    $("major-biaya").innerText = details.biaya || biayaInfo;
-    $("major-kampus").href = kampusUrl;
+    $("major-campus").href = "https://www.google.com/search?q=" + encodeURIComponent("kampus yang memiliki jurusan " + major);
+    $("major-campus").setAttribute("aria-label", "Cari kampus dengan jurusan " + major + " di Google");
 
     // Catatan bila jalur yang dipilih belum cocok dengan kebutuhan jurusan
     const mismatch = details.butuhIpa && (jalur === "IPS" || jalur === "Bahasa");
